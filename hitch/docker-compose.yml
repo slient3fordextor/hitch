@@ -1,0 +1,101 @@
+version: '3'  
+services:  
+  hitch-mysql:  
+    image: mysql:5.7.43  
+    container_name: hitch-mysql  
+    restart: always  
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_HOST: '%'
+      TZ: Asia/Shanghai
+    command:
+      --lower_case_table_names=1
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_general_ci
+      --explicit_defaults_for_timestamp=true
+    volumes:  
+      - ./mysql-data:/var/lib/mysql 
+      - ./my.cnf:/etc/mysql/conf.d/my.cnf
+      - ./docker-compose-init.sql:/docker-entrypoint-initdb.d/init.sql 
+    ports:  
+      - "3306:3306"
+    networks:  
+      - hitch_net
+
+  hitch-rabbitmq:  
+    image: rabbitmq:3.6.10-management  
+    container_name: hitch-rabbitmq  
+    restart: always
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    networks:  
+      - hitch_net
+
+  hitch-redis:  
+    image: redis:6.0.6  
+    container_name: hitch-redis  
+    restart: always  
+    ports:
+      - "6379:6379"
+    networks:  
+      - hitch_net
+
+  hitch-mongo4:  
+    image: docker.io/mongo:4.4  
+    container_name: hitch-mongo4  
+    restart: always  
+    ports:
+      - "27017:27017"
+    networks:  
+      - hitch_net
+      
+  hitch-minio:
+    image: minio/minio:RELEASE.2023-12-02T10-51-33Z
+    container_name: hitch-minio
+    restart: always
+    command: server /data --console-address ":9090" --address ":9000"
+    environment:
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+    volumes:
+      - ./minio-data:/data
+      - ./minio-config:/root/.minio
+    ports:
+      - "9005:9000"
+      - "9006:9090"
+    networks:
+      - hitch_net
+
+  hitch-nacos:  
+    image: nacos/nacos-server:2.0.1  
+    container_name: hitch-nacos  
+    restart: always  
+    ports:
+      - "8848:8848"
+    networks:  
+      - hitch_net
+    environment:
+      - MODE=standalone
+      
+  hitch-portainer:
+    image: portainer/portainer:latest
+    container_name: hitch-portainer  
+    restart: always  
+    ports:
+      - "9443:9443"
+      - "9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./portainer_data:/data
+    networks:  
+      - hitch_net
+       
+networks:  
+  hitch_net:  
+    driver: bridge  
+    ipam:  
+      config:  
+        - subnet: 172.18.0.0/24  
+
+

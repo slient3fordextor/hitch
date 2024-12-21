@@ -109,5 +109,7 @@ public class APIController {
         return accountHandler.vehicleAuth();
     }
 
-
+//    @ApiOperation(value = "密码修改接口", tags = {"账户管理"})
+//    @PostMapping("/modification")
+//    public ResponseVO<>
 }

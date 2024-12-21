@@ -18,7 +18,9 @@ public enum BusinessErrors {
     PAYMENT_COMMUNICATION_FAILURE(-5004, "行程预支付通讯失败"),
     PAYMENT_PRE_PAY_FAIL(-5005, "行程预支付失败"),
     PAYMENT_PAY_IN_PROGRESSL(-5005, "行程支付进行中"),
-    WS_SEND_FAILED(-6001, "websocket发送消息失败");
+    WS_SEND_FAILED(-6001, "websocket发送消息失败"),
+    PASSWORD_ERROR(-6002, "旧密码输入错误" ),
+    PASSWORD_NEWPASSWORD_INCORRENT(-6003, "新旧密码不能相同");
 
     //错误码
     private int code;

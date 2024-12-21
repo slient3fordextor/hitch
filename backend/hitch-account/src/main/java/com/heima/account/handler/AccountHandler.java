@@ -18,20 +18,18 @@ import com.heima.modules.po.VehiclePO;
 import com.heima.modules.vo.AccountVO;
 import com.heima.modules.vo.AuthenticationVO;
 import com.heima.modules.vo.VehicleVO;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.io.File;
-import java.net.URL;
+import java.util.Objects;
 
 @Component
 public class AccountHandler {
     private final static Logger logger = LoggerFactory.getLogger(AccountHandler.class);
-    private SnowflakeIdWorker idWorker = new SnowflakeIdWorker(0, 0);
+    private final SnowflakeIdWorker idWorker = new SnowflakeIdWorker(0, 0);
 
     @Autowired
     private RedisSessionHelper redisSessionHelper;
@@ -87,19 +85,25 @@ public class AccountHandler {
         String userid = accountVO.getCurrentUserId();
         //TODO:任务1-修改密码-1day
         //获取当前用户在数据库里的信息
+        AccountPO user = accountAPIService.getAccountByID(userid);
         //旧密码加密，对比数据库，防止输入错误
+//        accountVO.setPassword(CommonsUtils.encodeMD5(accountVO.getPassword()));
+        if(!Objects.equals(CommonsUtils.encodeMD5(accountVO.getPassword()), user.getPassword())) {
+            throw new BusinessRuntimeException(BusinessErrors.PASSWORD_ERROR);
+        }
         //新密码加密，对比旧密码，不允许相同
+
+        if(CommonsUtils.encodeMD5(accountVO.getNewPassword()).equals(accountVO.getPassword())){
+            throw new BusinessRuntimeException(BusinessErrors.PASSWORD_NEWPASSWORD_INCORRENT);
+        }
         //校验通过，将新密码写入数据库，修改成功
-
-
+        user.setPassword(CommonsUtils.encodeMD5(accountVO.getNewPassword()));
+        accountAPIService.update(user);
         return ResponseVO.success(null, "修改密码成功");
     }
 
     /**
      * 修改用户信息
-     *
-     * @param accountVO
-     * @return
      */
     public ResponseVO<AccountVO> modify(AccountVO accountVO) {
         AccountPO accountPO = accountAPIService.getAccountByID(accountVO.getCurrentUserId());
@@ -115,9 +119,6 @@ public class AccountHandler {
 
     /**
      * 生成Token
-     *
-     * @param accountVO
-     * @return
      */
     public ResponseVO accountLogin(AccountVO accountVO) {
         AccountVO vo = verifyAccountLogin(accountVO);
@@ -249,7 +250,17 @@ public class AccountHandler {
         VehiclePO vehiclePO = getVehiclePO(accountPO);
         try {
             //TODO:任务2.1-车辆信息验证入口-2day
-            String license = aiHelper.getLicense(vehiclePO);
+            String license = aiHelper.getLicensePlateByCar(vehiclePO);
+            if(license.contains("error_code")){
+                return ResponseVO.error("车辆识别失败");
+            }
+            String carNumber = aiHelper.getLicensePlateByDrivingLicense(vehiclePO);
+            if(carNumber.contains("error_code")){
+                return ResponseVO.error("行驶证识别失败");
+            }
+            if(!carNumber.equals(license)){
+                return ResponseVO.error("车辆信息与驾驶证不符");
+            }
             vehiclePO.setCarNumber(license);
             accountPO.setRole(1);
             accountAPIService.update(accountPO);

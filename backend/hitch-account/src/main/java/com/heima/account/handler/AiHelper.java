@@ -4,7 +4,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.heima.commons.enums.BusinessErrors;
 import com.heima.commons.exception.BusinessRuntimeException;
+import com.heima.modules.po.AccountPO;
 import com.heima.modules.po.VehiclePO;
+import com.heima.modules.vo.AccountVO;
 import okhttp3.*;
 import org.apache.commons.io.FileUtils;
 import org.json.JSONObject;
@@ -18,6 +20,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Base64;
 
@@ -38,7 +41,7 @@ public class AiHelper {
         System.out.println(code);
     }
 
-    /*
+    /**
 
     图像识别，获取车牌信息
     文档（行驶证识别）：https://cloud.baidu.com/doc/OCR/s/yk3h7y3ks
@@ -52,10 +55,32 @@ public class AiHelper {
 
     简化版业务流程（至少完成）：识别车辆车牌号即可
 
-    * */
+    */
     public String getLicense(VehiclePO vehiclePO) throws IOException {
         //TODO:任务2.1-车辆信息验证代码编写-2day
+        AccountPO accountPO = new AccountPO();
+        AccountVO accountVO = new AccountVO();
+        String carFrontPhoto = vehiclePO.getCarFrontPhoto();
+
+        Path tempDir = Paths.get(System.getProperty("java.io.tmpdir"),"tempDownloads");
+        String fileName = "picture.jpg";
+        String fileUrl = "com/heima/account/" + fileName;
+        try {
+            URL url = new URL(carFrontPhoto);
+            //创建临时文件夹
+            Files.createDirectories(tempDir);
+            //下载文件并保存到目标文件
+        }catch (Exception e){
+            e.printStackTrace();
+        }
         return "00000";
     }
 
+    public String getLicensePlateByDrivingLicense(VehiclePO vehiclePO) {
+        return "00000";
+    }
+
+    public String getLicensePlateByCar(VehiclePO vehiclePO) {
+        return "00000";
+    }
 }
