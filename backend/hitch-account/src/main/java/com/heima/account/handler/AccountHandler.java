@@ -267,7 +267,6 @@ public class AccountHandler {
             vehicleAPIService.update(vehiclePO);
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseVO.error(e.getMessage());
         }
         return ResponseVO.success(vehiclePO);
     }

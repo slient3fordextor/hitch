@@ -85,6 +85,10 @@
             <artifactId>java-sdk</artifactId>
             <version>4.16.2</version>
         </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-codec-http</artifactId>
+        </dependency>
 
     </dependencies>
 
