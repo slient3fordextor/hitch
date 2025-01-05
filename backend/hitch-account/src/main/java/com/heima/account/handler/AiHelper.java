@@ -1,5 +1,6 @@
 package com.heima.account.handler;
 
+import com.baidu.aip.util.Base64Util;
 import com.heima.commons.ai.BaiduAIHelper;
 import com.heima.modules.po.VehiclePO;
 import okhttp3.*;
@@ -12,6 +13,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -22,6 +24,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Base64;
 
+import static java.nio.file.Files.createTempDirectory;
 
 
 @Component
@@ -58,75 +61,45 @@ public class AiHelper {
     */
     public String getLicense(VehiclePO vehiclePO) throws IOException {
         //TODO:任务2.1-车辆信息验证代码编写-2day
-
         // 获取车牌号照片
         String url = vehiclePO.getCarFrontPhoto();
 //        创建临时文件夹
-        Path tempDir = Paths.get(System.getProperty("java.io.tmpdir"), "tempDownloads");
-        Files.createDirectories(tempDir);
-        //获取车牌号照片
-        try {
-            URL drivingCarUrl = new URL(url);
-//        写入文件夹
-            InputStream inputStream = drivingCarUrl.openStream();
-            Path tempFile = tempDir.resolve(drivingCarUrl.getPath().substring(drivingCarUrl.getPath().lastIndexOf('/') + 1));
-            Files.copy(inputStream, tempFile);
-            inputStream.close();
-            //进行base64编码
-            byte[] fileContent = Files.readAllBytes(tempFile);
-            String base64Encoded = Base64.getEncoder().encodeToString(fileContent);
-            String encoded = URLEncoder.encode(base64Encoded, "UTF-8");
+        byte[] imgData = fetchImageFromServer(url);
+        String imgStr = Base64Util.encode(imgData);
+        String imgParam = URLEncoder.encode(imgStr, "UTF-8");
 
+        MediaType mediaType = MediaType.parse("application/x-www-form-urlencoded");
+        RequestBody body = RequestBody.create(mediaType, "image=" + imgParam +"&multi_detect=false&multi_scale=false");
+        Request request = new Request.Builder()
+                .url("https://aip.baidubce.com/rest/2.0/ocr/v1/license_plate?access_token=" + baiduAIHelper.getAccessToken())
+                .method("POST", body)
+                .addHeader("Content-Type", "application/x-www-form-urlencoded")
+                .addHeader("Accept", "application/json")
+                .build();
 
-            MediaType mediaType = MediaType.parse("application/x-www-form-urlencoded");
-            RequestBody body = RequestBody.create(mediaType, "image=" + encoded +"&multi_detect=false&multi_scale=false");
-            Request request = new Request.Builder()
-                    .url("https://aip.baidubce.com/rest/2.0/ocr/v1/license_plate?access_token=" + baiduAIHelper.getAccessToken())
-                    .method("POST", body)
-                    .addHeader("Content-Type", "application/x-www-form-urlencoded")
-                    .addHeader("Accept", "application/json")
-                    .build();
+        Response response = HTTP_CLIENT.newCall(request).execute();
+        String responseBody = response.body().string();
+        System.out.println(responseBody);
 
-            Response response = HTTP_CLIENT.newCall(request).execute();
-            String responseBody = response.body().string();
-            System.out.println(responseBody);
-
-            JSONObject jsonObject = new JSONObject(responseBody);
-            JSONObject wordsObject = jsonObject.getJSONObject("words_result");
-            String number = wordsObject.getString("number");
-
-            return number;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
+        JSONObject jsonObject = new JSONObject(responseBody);
+        JSONObject wordsObject = jsonObject.getJSONObject("words_result");
+        String number = wordsObject.getString("number");
+        return number;
     }
 
-    public String getLicensePlateByDrivingLicense(VehiclePO vehiclePO) {
-        try {
-            String filePath = vehiclePO.getCarBackPhoto();
-            Path tempDir = Paths.get(System.getProperty("java.io.tmpdir"), "tempDownloads");
-            //获取驾驶证照片
-            URL drivingLicneseUrl = new URL(filePath);
-//            存放文件到临时文件夹
-            InputStream inputStream = drivingLicneseUrl.openStream();
-            Path tempFile = tempDir.resolve(drivingLicneseUrl.getPath().substring(drivingLicneseUrl.getPath().lastIndexOf('/') + 1));
-            Files.copy(inputStream, tempFile);
-            inputStream.close();
-//        将文件编码为base64
-            byte[] fileContent = Files.readAllBytes(tempFile);
-            String base64Encoded = Base64.getEncoder().encodeToString(fileContent);
-            System.out.println("Base64编码结果: " + base64Encoded);
-            // 注意这里仅为了简化编码每一次请求都去获取access_token，线上环境access_token有过期时间， 客户端可自行缓存，过期后重新获取。
-            String accessToken = baiduAIHelper.getAccessToken();
-
-        } catch (Exception e) {
-            e.printStackTrace();
+    private byte[] fetchImageFromServer(String url) throws IOException {
+        URL imageUrl = new URL(url);
+        try (InputStream in = imageUrl.openStream();
+             BufferedInputStream bis = new BufferedInputStream(in)) {
+            // 用于存储读取到的字节数据
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+            // 用于拼接完整的字节数组数据
+            java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+            while ((bytesRead = bis.read(buffer))!= -1) {
+                bos.write(buffer, 0, bytesRead);
+            }
+            return bos.toByteArray();
         }
-        return null;
-    }
-
-    public String getLicensePlateByCar(VehiclePO vehiclePO) {
-        return "00000";
     }
 }
