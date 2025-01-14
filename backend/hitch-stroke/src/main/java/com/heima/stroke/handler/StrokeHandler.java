@@ -1,6 +1,5 @@
 package com.heima.stroke.handler;
 
-import com.alibaba.fastjson.JSON;
 import com.heima.commons.constant.HtichConstants;
 import com.heima.commons.domin.bo.*;
 import com.heima.commons.domin.vo.response.ResponseVO;
@@ -398,20 +397,33 @@ public class StrokeHandler {
      * @param inviter 司机行程对象
      * @param invitee 乘客行程对象
      */
-    private void addOrder(StrokePO inviter, StrokePO invitee) {
+    private void addOrder(StrokePO inviter, StrokePO invitee){
         OrderPO orderPO = new OrderPO();
         orderPO.setId(CommonsUtils.getWorkerID());//雪花算法主键序列
         orderPO.setStatus(0);//初始状态：未支付
         //TODO:任务3.1-生成订单-3day
         //注意传入的两个参数，包含了下面想要的信息：
         //3.1 给orderPo设置基本的乘客、车主、行程信息
+        orderPO.setDriverId(inviter.getPublisherId());
+        orderPO.setPassengerId(invitee.getPublisherId());
+        orderPO.setCreatedBy(invitee.getId());
+        orderPO.setDriverStrokeId(inviter.getId());
+        orderPO.setPassengerStrokeId(invitee.getId());
         //3.2 对接百度路径计算，给orderPo设置路径长度distance、估计时间duration
+        String start = invitee.getStartGeoLat() + "," + invitee.getStartGeoLng();
+        String end = invitee.getEndGeoLat() + "," + invitee.getEndGeoLng();
+        RoutePlanResultBO routePlanResultBO = baiduMapClient.pathPlanning(start,end);
         //对接文档：https://lbs.baidu.com/faq/api?title=webapi/routchtout-drive
-
+        orderPO.setDistance(routePlanResultBO.getDistance().getValue());
+        orderPO.setEstimatedTime(routePlanResultBO.getDuration().getValue());
         //3.3 完成计费功能，给orderPo设置金额
         //计费规则：3公里以内起步价13元；3公里以上2.3元/公里；燃油附加费1次收取1元
         //建议：使用装饰着模式来完成
-
+        float distanceKM = (float) (routePlanResultBO.getDistance().getValue() / 1000.0);
+        float cost = valuation.calculation(distanceKM);
+        String format = String.format(Locale.ENGLISH, "%.2f", cost);
+        orderPO.setCost(Float.parseFloat(format));
+        orderPO.setCreatedTime(new Date());
 
         orderAPIService.add(orderPO);
     }

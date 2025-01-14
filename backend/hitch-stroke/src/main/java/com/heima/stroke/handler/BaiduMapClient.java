@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.heima.commons.domin.bo.RoutePlanResultBO;
 import com.heima.commons.domin.bo.TextValue;
+import com.heima.stroke.handler.valuation.Valuation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,6 +28,8 @@ public class BaiduMapClient {
 
     private final static Logger logger = LoggerFactory.getLogger(BaiduMapClient.class);
 
+    private Valuation valuation;
+
     //TODO:任务3.2-调百度路径计算两点间的距离，和预估抵达时长
     public RoutePlanResultBO pathPlanning(String origins, String destinations){
 
@@ -47,7 +50,10 @@ public class BaiduMapClient {
         JSONObject jsonObject = JSON.parseObject(JsonStr);
 
         int status = jsonObject.getIntValue("status");
-        if(status != 0) return null;
+        if(status != 0) {
+            System.out.println("任务管理失败，请重试");
+            return null;
+        }
         JSONObject jsonObject1 = jsonObject.getJSONArray("result").getJSONObject(0);
         String distanceText = jsonObject1.getJSONObject("distance").getString("text");
         Integer distanceValue = jsonObject1.getJSONObject("distance").getInteger("value");
