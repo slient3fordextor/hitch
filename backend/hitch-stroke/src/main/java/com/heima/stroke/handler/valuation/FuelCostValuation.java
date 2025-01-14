@@ -10,6 +10,7 @@ public class FuelCostValuation implements Valuation {
 
     @Override
     public float calculation(float km) {
-        return 0;
+        if(valuation == null) return 1.0f;
+        return valuation.calculation(km) + 1.0f;
     }
 }
