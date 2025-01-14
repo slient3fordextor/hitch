@@ -93,7 +93,7 @@ public class BaiduMapClient {
         Integer durationValue = jsonObject1.getJSONObject("duration").getInteger("value");
         logger.info("获取行程数据");
         logger.info("距离 =" + distanceText);
-        logger.info("终点 =" + durationText);
+        logger.info("时间 =" + durationText);
 
         RoutePlanResultBO routePlanResultBO = new RoutePlanResultBO();
 
@@ -103,7 +103,7 @@ public class BaiduMapClient {
         textValue.setValue(distanceValue);
         routePlanResultBO.setDistance(textValue);
 
-        //设置终点长度
+        //设置时间长短
         TextValue textValue1 = new TextValue();
         textValue1.setText(durationText);
         textValue1.setValue(durationValue);
