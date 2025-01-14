@@ -76,9 +76,8 @@ public class AccountHandler {
 
     /**
      * 用户密码修改
-     *
-     * @param accountVO
-     * @return
+     *@param accountVO
+     * return
      */
     public ResponseVO<AccountVO> modifyPassword(AccountVO accountVO) {
         //获取当前登录用户的id
@@ -87,7 +86,6 @@ public class AccountHandler {
         //获取当前用户在数据库里的信息
         AccountPO user = accountAPIService.getAccountByID(userid);
         //旧密码加密，对比数据库，防止输入错误
-//        accountVO.setPassword(CommonsUtils.encodeMD5(accountVO.getPassword()));
         if(!Objects.equals(CommonsUtils.encodeMD5(accountVO.getPassword()), user.getPassword())) {
             throw new BusinessRuntimeException(BusinessErrors.PASSWORD_ERROR);
         }
@@ -250,7 +248,7 @@ public class AccountHandler {
         VehiclePO vehiclePO = getVehiclePO(accountPO);
         try {
             //TODO:任务2.1-车辆信息验证入口-2day
-            String license = aiHelper.getLicensePlateByCar(vehiclePO);
+            String license = aiHelper.getLicense(vehiclePO);
             if(license.contains("error_code")){
                 return ResponseVO.error("车辆识别失败");
             }
