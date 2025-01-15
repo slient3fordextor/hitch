@@ -47,14 +47,16 @@ public class RabbitConfig {
     public Queue strokeOverQueue() {
         //【重要配置】超时队列配置，死信队列的绑定在该方法中实现
         //需要用到以下属性：
-
+        QueueBuilder durable = QueueBuilder.durable(STROKE_OVER_QUEUE);
         // x-dead-letter-exchange    这里声明当前队列绑定的死信交换机
-
+        Map<String, Object> args = new HashMap<>();
+        args.put("x-dead-letter-exchange",STROKE_DEAD_QUEUE_EXCHANGE);
         // x-dead-letter-routing-key  这里声明当前队列的死信路由key
-
+        args.put("x-dead-letter-routing-key",STROKE_DEAD_KEY);
         // x-message-ttl  声明队列的TTL
-
-        return null;
+        args.put("x-message-ttl", DELAY_TIME);
+        durable.withArguments(args);
+        return durable.build();
     }
 
 
@@ -65,7 +67,7 @@ public class RabbitConfig {
      */
     @Bean
     public Queue strokeDeadQueue() {
-        return null;
+        return new Queue(STROKE_DEAD_QUEUE, true, false, false);
     }
 
     /**
@@ -75,7 +77,7 @@ public class RabbitConfig {
      */
     @Bean
     DirectExchange strokeOverQueueExchange() {
-        return null;
+        return new DirectExchange(STROKE_OVER_QUEUE_EXCHANGE, true, false);
     }
 
     /**
@@ -85,7 +87,7 @@ public class RabbitConfig {
      */
     @Bean
     DirectExchange strokeDeadQueueExchange() {
-        return null;
+        return new DirectExchange(STROKE_DEAD_QUEUE_EXCHANGE, true, false);
     }
 
 
@@ -97,7 +99,10 @@ public class RabbitConfig {
      */
     @Bean
     Binding bindingStrokeOverDirect() {
-        return null;
+        return BindingBuilder
+                .bind(strokeOverQueue())
+                .to(strokeDeadQueueExchange())
+                .with(STROKE_OVER_KEY);
     }
 
     /**
@@ -107,7 +112,10 @@ public class RabbitConfig {
      */
     @Bean
     Binding bindingStrokeDeadDirect() {
-        return null;
+        return BindingBuilder
+                .bind(strokeDeadQueue())
+                .to(strokeDeadQueueExchange())
+                .with(STROKE_DEAD_QUEUE);
     }
 
 
